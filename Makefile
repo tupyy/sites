@@ -3,9 +3,6 @@
 help: help.all
 tools: tools.get
 build: build.docker
-run: run.docker
-setup: setup.init
-setup.paperless: setup.paperless.init setup.paperless.role setup.paperless.user
 
 
 ################
@@ -30,6 +27,12 @@ help.highlevel:
 help.all:
 	@grep -hE '^#help|^[a-z_-]+:' $(MAKEFILE_LIST) | sed "s/#help //g" | LANG=C sort -d | \
 	awk 'BEGIN {FS = ":"}; {if ($$1 ~ /\./) printf("    $(COLOR_BLUE)%-21s$(RESET_COLOR) %s\n", $$1, $$2); else printf("$(COLOR_YELLOW)%-25s$(RESET_COLOR) %s\n", $$1, $$2)}'
+
+#help run: run postgres and paperless
+run.docker: run.postgres run.paperless
+
+run.docker.stop: run.postgres.stop run.paperless.stop
+
 
 # include postgres
 -include postgres/postgres.mk

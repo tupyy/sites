@@ -2,6 +2,11 @@
 # Custom mk for postgres setup    #
 ###################################
 
+run.postgres: run.postgres.docker
+run.postgres.stop: run.postgres.docker.stop
+setup.postgres: setup.init setup.postgres.paperless
+setup.postgres.paperless: setup.paperless.init setup.paperless.role setup.paperless.user
+
 ###############
 # Run targets #
 ###############
@@ -32,6 +37,9 @@ run.postgres.docker:
 	-v $(PG_DATA):/var/lib/postgresql/data \
 	--user $(USER_ID):$(GROUP_ID) \
 	--name $(CONTAINER_NAME) $(IMAGE_NAME):$(IMAGE_TAG)
+
+#help run.postgres.docker.logs: show logs from postgres
+run.postgres.docker.logs:
 	docker logs	-f $(CONTAINER_NAME)
 
 #help run.postgres.docker.stop: stop postgres docker
