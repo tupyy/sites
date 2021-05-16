@@ -1,14 +1,3 @@
-###################################
-# If you are using a local installation of postgres, make sure to set a password to the postgres user
-# to be able to use it:
-#
-# > sudo -u postgres psql
-# =># \password postgres
-###################################
-
-DB_HOST=localhost
-DB_PORT=5432
-
 .PHONY: help setup tools generate deploy
 
 help: help.all
@@ -42,89 +31,7 @@ help.all:
 	@grep -hE '^#help|^[a-z_-]+:' $(MAKEFILE_LIST) | sed "s/#help //g" | LANG=C sort -d | \
 	awk 'BEGIN {FS = ":"}; {if ($$1 ~ /\./) printf("    $(COLOR_BLUE)%-21s$(RESET_COLOR) %s\n", $$1, $$2); else printf("$(COLOR_YELLOW)%-25s$(RESET_COLOR) %s\n", $$1, $$2)}'
 
-
-###############
-# Run targets #
-###############
-
-DOCKER_CMD=docker
-CONTAINER_NAME=postgresql
-IMAGE_NAME=postgres
-IMAGE_TAG=13
-PG_NETWORK=pg_network
-PG_DATA=/home/cosmin/tmp/pgdata
-ROOT_USER=postgres
-USER_ID=$(shell id `whoami` -u)
-GROUP_ID=$(shell id `whoami` -g)
-RESOURCE_ADMIN_USER=resources_admin
-RESOURCE_ADMIN_PWD=$(shell cat $(CURDIR)/.pgpass | grep $(RESOURCE_ADMIN_USER) | cut -d":" -f5)
-
-.PHONY: run.docker run.docker.stop run.docker.restart
-
-#help run.docker: run postgres using docker
-run.docker:
-	$(DOCKER_CMD) network create -d bridge $(PG_NETWORK)
-	$(DOCKER_CMD) run --rm -d -p $(DB_PORT):5432 \
-	--network=$(PG_NETWORK) \
-	-e POSTGRES_USER=$(ROOT_USER) \
-	-e POSTGRES_PASSWORD=$(ROOT_PWD) \
-	-e VERBOSE=1 \
-	-v $(PG_DATA):/var/lib/postgresql/data \
-	--user $(USER_ID):$(GROUP_ID) \
-	--name $(CONTAINER_NAME) $(IMAGE_NAME):$(IMAGE_TAG)
-	docker logs	-f $(CONTAINER_NAME)
-
-#help run.docker.stop: stop postgres docker
-run.docker.stop:
-	docker stop postgresql
-	docker network rm $(PG_NETWORK)
-
-#help run.docker.restart: run.docker.restart
-run.docker.restart: run.docker.stop run.docker
-
-
-#################
-# Setup targets #
-#################
-
-PGPASSFILE=$(CURDIR)/.pgpass
-PSQL_COMMAND=PGPASSFILE=$(PGPASSFILE) psql --quiet --host=$(DB_HOST) --port=$(DB_PORT) --dbname=postgres -v ON_ERROR_STOP=on
-
-.PHONY: setup.init 
-
-#help setup.init: init the database
-setup.init:
-	$(PSQL_COMMAND) --user=$(ROOT_USER) \
-		-v resources_admin_pwd="'$(RESOURCE_ADMIN_PWD)'" \
-		-f sql/setup/init.sql
-
-
-###################
-# Setup paperless #
-###################
-
-PAPERLESS_SERVICE_USER=paperless
-PAPERLESS_SERVICE_PWD=$(shell cat $(CURDIR)/.pgpass | grep $(RESOURCE_ADMIN_USER) | cut -d":" -f5)
-
-.PHONY: setup.paperless.clean setup.paperless.init setup.paperless.role setup.paperless.user
-
-#help setup.clean: cleans postgres from all created resources
-setup.paperless.clean:
-	$(PSQL_COMMAND) --user=$(ROOT_USER) -f sql/setup_paperless/clean.sql
-
-#help setup.paperless.init: init paperless db
-setup.paperless.init:
-	$(PSQL_COMMAND) --user=$(RESOURCE_ADMIN_USER) \
-		-f sql/setup_paperless/init.sql
-
-#help setup.paperless.role: init postgres roles for paperless
-setup.paperless.role:
-	$(PSQL_COMMAND) --user=$(RESOURCE_ADMIN_USER) \
-		-f sql/setup_paperless/postgres_roles.sql
-
-#help setup.users: init postgres users
-setup.paperless.user:
-	$(PSQL_COMMAND) --user=$(RESOURCE_ADMIN_USER) \
-		-v paperless_service_pwd="'$(PAPERLESS_SERVICE_PWD)'" \
-		-f sql/setup_paperless/postgres_users.sql
-
+# include postgres
+-include postgres/postgres.mk
+# include paperless
+-include paperless/paperless.mk
