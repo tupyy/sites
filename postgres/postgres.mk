@@ -19,10 +19,11 @@ IMAGE_TAG=13
 PG_NETWORK=pg_network
 PG_DATA=/home/cosmin/tmp/pgdata
 ROOT_USER=postgres
+ROOT_USER_PWD=$(shell cat $(CURDIR)/postgres/.pgpass | head -n 1 | cut -d":" -f5)
 USER_ID=$(shell id `whoami` -u)
 GROUP_ID=$(shell id `whoami` -g)
 RESOURCE_ADMIN_USER=resources_admin
-RESOURCE_ADMIN_PWD=$(shell cat $(CURDIR)/.pgpass | grep $(RESOURCE_ADMIN_USER) | cut -d":" -f5)
+RESOURCE_ADMIN_PWD=$(shell cat $(CURDIR)/postgres/.pgpass | grep $(RESOURCE_ADMIN_USER) | cut -d":" -f5)
 
 .PHONY: run.postgres.docker run.postgres.docker.stop run.postgres.docker.restart
 
@@ -40,14 +41,14 @@ run.postgres.docker:
 
 #help run.postgres.docker.logs: show logs from postgres
 run.postgres.docker.logs:
-	docker logs	-f $(CONTAINER_NAME)
+	$(DOCKER_CMD) logs	-f $(CONTAINER_NAME)
 
 #help run.postgres.docker.stop: stop postgres docker
 run.postgres.docker.stop:
-	docker stop postgresql
+	$(DOCKER_CMD) stop postgresql
 
 run.postgres.docker.stop.network::
-	docker network rm $(PG_NETWORK)
+	$(DOCKER_CMD) network rm $(PG_NETWORK)
 
 #help run.postgres.docker.restart: run.postgres.docker.restart
 run.postgres.docker.restart: run.postgres.docker.stop run.postgres.docker.stop.network run.postgres.docker
