@@ -43,26 +43,6 @@ help.all:
 	awk 'BEGIN {FS = ":"}; {if ($$1 ~ /\./) printf("    $(COLOR_BLUE)%-21s$(RESET_COLOR) %s\n", $$1, $$2); else printf("$(COLOR_YELLOW)%-25s$(RESET_COLOR) %s\n", $$1, $$2)}'
 
 
-#################
-# Build targets #
-#################
-
-
-.PHONY: build.docker build.get.imagename build.get.tag
-
-#help build.docker.local: build docker image for local dev
-build.docker:
-	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) -f local/Dockerfile .
-
-#help build.get.imagename: Allows to get the name of the service (for the CI)
-build.get.imagename:
-	@echo -n $(IMAGE_NAME)
-
-#help build.get.tag: Allows to get the tag of the service (for the CI)
-build.get.tag:
-	@echo -n $(IMAGE_TAG)
-
-
 ###############
 # Run targets #
 ###############
