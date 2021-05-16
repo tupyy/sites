@@ -3,7 +3,7 @@
 ###################################
 
 run.postgres: run.postgres.docker
-run.postgres.stop: run.postgres.docker.stop
+run.postgres.stop: run.postgres.docker.stop run.postgres.docker.stop.network
 setup.postgres: setup.init setup.postgres.paperless
 setup.postgres.paperless: setup.paperless.init setup.paperless.role setup.paperless.user
 
@@ -45,10 +45,12 @@ run.postgres.docker.logs:
 #help run.postgres.docker.stop: stop postgres docker
 run.postgres.docker.stop:
 	docker stop postgresql
+
+run.postgres.docker.stop.network::
 	docker network rm $(PG_NETWORK)
 
 #help run.postgres.docker.restart: run.postgres.docker.restart
-run.postgres.docker.restart: run.postgres.docker.stop run.postgres.docker
+run.postgres.docker.restart: run.postgres.docker.stop run.postgres.docker.stop.network run.postgres.docker
 
 
 #################

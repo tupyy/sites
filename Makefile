@@ -31,7 +31,7 @@ help.all:
 #help run: run postgres and paperless
 run.docker: run.postgres run.paperless
 
-run.docker.stop: run.postgres.stop run.paperless.stop
+run.docker.stop: run.paperless.stop run.postgres.stop
 
 
 # include postgres

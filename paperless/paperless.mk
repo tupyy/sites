@@ -3,6 +3,7 @@
 ###################################
 
 run.paperless: run.paperless.network run.paperless.broker run.paperless.website
+run.paperless.stop: run.paperless.broker.stop run.paperless.website.stop run.paperless.stop.network
 
 ###############
 # Run targets #
@@ -36,8 +37,14 @@ PAPERLESS_DBHOSY=db
 run.paperless.network:
 	$(DOCKER_CMD) network create $(PAPERLESS_NETWORK)
 
+run.paperless.stop.network:
+	$(DOCKER_CMD) network rm $(PAPERLESS_NETWORK)
+
 run.paperless.broker:
 	$(DOCKER_CMD) run --rm -d --network $(PAPERLESS_NETWORK) --name $(PAPERLESS_BROKER) $(REDIS_IMAGE)
+
+run.paperless.broker.stop:
+	$(DOCKER_CMD) stop $(PAPERLESS_BROKER)
 
 run.paperless.website:
 	$(DOCKER_CMD) run --rm -d -p $(PAPERLESS_PORT):8000 \
@@ -60,7 +67,6 @@ run.paperless.website:
 		--name $(PAPERLESS_CONTAINER) $(PAPERLESS_IMAGE_NAME):$(PAPERLESS_IMAGE_TAG)
 	$(DOCKER_CMD) network connect $(DB_NETWORK) $(PAPERLESS_CONTAINER)
 
-run.paperless.stop:
-	$(DOCKER_CMD) stop $(PAPERLESS_BROKER)
+run.paperless.website.stop:
 	$(DOCKER_CMD) stop $(PAPERLESS_CONTAINER)
-	$(DOCKER_CMD) network rm $(PAPERLESS_NETWORK)
+
