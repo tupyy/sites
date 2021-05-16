@@ -15,7 +15,8 @@ help: help.all
 tools: tools.get
 build: build.docker
 run: run.docker
-setup: setup.init setup.paperless.role setup.paperless.user
+setup: setup.init
+setup.paperless: setup.paperless.init setup.paperless.role setup.paperless.user
 
 
 ################
@@ -66,31 +67,37 @@ build.get.tag:
 # Run targets #
 ###############
 
+DOCKER_CMD=docker
 CONTAINER_NAME=postgresql
 IMAGE_NAME=postgres
 IMAGE_TAG=13
+PG_NETWORK=pg_network
 PG_DATA=/home/cosmin/tmp/pgdata
 ROOT_USER=postgres
-ROOT_PWD=$(shell cat $(CUR_DIR)/.root_pass)
+USER_ID=$(shell id `whoami` -u)
+GROUP_ID=$(shell id `whoami` -g)
 RESOURCE_ADMIN_USER=resources_admin
-RESOURCE_ADMIN_PWD=$(shell cat $(CUR_DIR)/.pgpass)
+RESOURCE_ADMIN_PWD=$(shell cat $(CURDIR)/.pgpass | grep $(RESOURCE_ADMIN_USER) | cut -d":" -f5)
 
 .PHONY: run.docker run.docker.stop run.docker.restart
 
 #help run.docker: run postgres using docker
 run.docker:
-	@docker run --rm -d \ 
-	-p $(DB_PORT):5432 \
-	-e PGDATA=$(PG_DATA) \
+	$(DOCKER_CMD) network create -d bridge $(PG_NETWORK)
+	$(DOCKER_CMD) run --rm -d -p $(DB_PORT):5432 \
+	--network=$(PG_NETWORK) \
 	-e POSTGRES_USER=$(ROOT_USER) \
 	-e POSTGRES_PASSWORD=$(ROOT_PWD) \
 	-e VERBOSE=1 \
+	-v $(PG_DATA):/var/lib/postgresql/data \
+	--user $(USER_ID):$(GROUP_ID) \
 	--name $(CONTAINER_NAME) $(IMAGE_NAME):$(IMAGE_TAG)
 	docker logs	-f $(CONTAINER_NAME)
 
 #help run.docker.stop: stop postgres docker
 run.docker.stop:
 	docker stop postgresql
+	docker network rm $(PG_NETWORK)
 
 #help run.docker.restart: run.docker.restart
 run.docker.restart: run.docker.stop run.docker
@@ -100,22 +107,35 @@ run.docker.restart: run.docker.stop run.docker
 # Setup targets #
 #################
 
-PAPERLESS_SERVICE_PWD=azerty
-
-PGPASSFILE=$(CURDIR)/sql/.pgpass
+PGPASSFILE=$(CURDIR)/.pgpass
 PSQL_COMMAND=PGPASSFILE=$(PGPASSFILE) psql --quiet --host=$(DB_HOST) --port=$(DB_PORT) --dbname=postgres -v ON_ERROR_STOP=on
 
-.PHONY: setup.clean setup.init setup.paperless
-
-#help setup.clean: cleans postgres from all created resources
-setup.clean:
-	$(PSQL_COMMAND) --user=$(ROOT_USER) -f sql/clean/clean.sql
+.PHONY: setup.init 
 
 #help setup.init: init the database
 setup.init:
 	$(PSQL_COMMAND) --user=$(ROOT_USER) \
 		-v resources_admin_pwd="'$(RESOURCE_ADMIN_PWD)'" \
-		-f sql/setup_device_mgt/init.sql
+		-f sql/setup/init.sql
+
+
+###################
+# Setup paperless #
+###################
+
+PAPERLESS_SERVICE_USER=paperless
+PAPERLESS_SERVICE_PWD=$(shell cat $(CURDIR)/.pgpass | grep $(RESOURCE_ADMIN_USER) | cut -d":" -f5)
+
+.PHONY: setup.paperless.clean setup.paperless.init setup.paperless.role setup.paperless.user
+
+#help setup.clean: cleans postgres from all created resources
+setup.paperless.clean:
+	$(PSQL_COMMAND) --user=$(ROOT_USER) -f sql/setup_paperless/clean.sql
+
+#help setup.paperless.init: init paperless db
+setup.paperless.init:
+	$(PSQL_COMMAND) --user=$(RESOURCE_ADMIN_USER) \
+		-f sql/setup_paperless/init.sql
 
 #help setup.paperless.role: init postgres roles for paperless
 setup.paperless.role:

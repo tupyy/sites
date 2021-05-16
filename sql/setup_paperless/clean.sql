@@ -4,7 +4,7 @@ SELECT *, pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backen
 -- Clean databases
 DROP DATABASE IF EXISTS paperless;
 
--- Clean table roles - device mgt
+-- Clean table roles 
 DROP ROLE IF EXISTS core_readwrite;
 DROP ROLE IF EXISTS core_readonly;
 
