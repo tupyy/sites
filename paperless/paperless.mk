@@ -69,3 +69,6 @@ run.paperless.website:
 run.paperless.website.stop:
 	$(DOCKER_CMD) stop $(PAPERLESS_CONTAINER)
 
+run.paperless.website.logs:
+	$(DOCKER_CMD) logs -f $(PAPERLESS_CONTAINER) | $(COLORIZE)
+
