@@ -65,7 +65,6 @@ run.paperless.website:
 		-e USERMAP_UID=$(USER_ID) \
 		-e USERMAP_GID=$(GROUP_ID) \
 		--name $(PAPERLESS_CONTAINER) $(PAPERLESS_IMAGE_NAME):$(PAPERLESS_IMAGE_TAG)
-	$(DOCKER_CMD) network connect $(DB_NETWORK) $(PAPERLESS_CONTAINER)
 
 run.paperless.website.stop:
 	$(DOCKER_CMD) stop $(PAPERLESS_CONTAINER)
